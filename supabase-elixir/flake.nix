@@ -3,23 +3,31 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05-small";
-    elixir-overlay.url = "github:zoedsoupe/elixir-overlay";
+    beam-overlay.url = "github:zeeetech/beam-overlay";
   };
 
-  outputs = {nixpkgs, elixir-overlay, ...}: {
+  outputs = {
+    nixpkgs,
+    beam-overlay,
+    ...
+  }: {
     devShells = nixpkgs.lib.genAttrs nixpkgs.lib.systems.flakeExposed (system: let
       pkgs = import nixpkgs {
         inherit system;
-        overlays = [elixir-overlay.overlays.default];
+        overlays = [beam-overlay.overlays.default];
       };
     in {
       default = pkgs.mkShell {
-        packages = with pkgs; [
-          erlang_28
-          (elixir-with-otp erlang_28)."1.18.4"
-          postgresql
-          just
-        ] ++ pkgs.lib.optional pkgs.stdenv.isLinux inotify-tools;
+        packages = with pkgs;
+          [
+            erlang_28
+            (pkgs.beam-overlay.mkToolchain {
+              elixir.version = "1.18.4";
+            })
+            postgresql
+            just
+          ]
+          ++ pkgs.lib.optional pkgs.stdenv.isLinux inotify-tools;
       };
     });
   };
